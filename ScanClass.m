@@ -1,0 +1,20 @@
+classdef ScanClass < handle
+    properties
+        resolution
+        image
+        pixelDim
+        colorRamp
+    end
+    methods
+        function obj = ScanClass(resolution)
+            obj.resolution = resolution;
+            obj.pixelDim = 1/obj.resolution;
+            
+            % initialize image matrix
+            obj.image = rand([obj.resolution, obj.resolution]);
+
+            % obj.createColorRamp(1);
+        end
+
+    end
+end

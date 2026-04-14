@@ -1,0 +1,31 @@
+% main.m
+% Tip Probe Simulation
+% Scanning Tunneling Microscope
+% College of Marin Physics Club
+% Kai Carlin - Spring 2026
+
+clear
+close all
+
+
+fig = figure('Name', 'Probe View', 'NumberTitle','off');
+g = uigridlayout(fig);
+g.RowHeight = {'1x','1x'};
+g.ColumnWidth = {'1x','1x','1x','1x'};
+button_ = uibutton(g());
+ax = uiaxes(g);
+ax = uiaxes(g);
+ax = uiaxes(g);
+ax = uiaxes(g);
+ax = uiaxes(g);
+ax = uiaxes(g);
+ax = uiaxes(g);
+axis equal
+xlim([-1,1]);
+ylim([-1,1]);
+zlim([-1,1]);
+title('Tip Probe 3D Macro View');
+xlabel('x-axis (m)');
+ylabel('y-axis (m)');
+zlabel('z-axis (m)');
+view(app.UIAxes, [-5 2 5]);

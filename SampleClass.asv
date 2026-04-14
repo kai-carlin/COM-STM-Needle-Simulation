@@ -1,0 +1,38 @@
+classdef SampleClass < handle
+    properties
+        sampleWidth;
+        samplePointSpacingPreview;
+        samplePointSpacing;
+        sampleAtomicDistance
+        sampleZPos;
+        sMeshPreviewX;
+        sMeshPreviewY;
+        sMeshPreviewZ;
+        sMeshX;
+        sMeshY;
+        sMeshZ;
+        activeWidth;
+        scanRange;
+    end
+    methods
+        function obj = SampleClass(sampleWidth, scanRange, sampleZPos, sampleAtomicDistance)
+            obj.sampleWidth = sampleWidth;
+            obj.samplePointSpacingPreview = linspace(-sampleWidth,sampleWidth,5);
+            obj.sampleZPos = sampleZPos;
+            obj.sampleAtomicDistance = sampleAtomicDistance;
+            obj.scanRange = scanRange;
+
+            [obj.sMeshPreviewX,obj.sMeshPreviewY] = meshgrid(obj.samplePointSpacingPreview,obj.samplePointSpacingPreview);
+            obj.sMeshPreviewZ = ones(size(obj.sMeshPreviewX))*obj.sampleZPos;
+
+            immediateZoom = 10;
+            obj.activeWidth = obj.sampleAtomicDistance*immediateZoom;
+            obj.samplePointSpacing = (-obj.activeWidth:obj.sampleAtomicDistance:obj.activeWidth);
+            % % sMesh = meshgrid(samplePointSpacing,samplePointSpacing); FIIIIIIIIIX THIIIIIIIISS
+            [obj.sMeshX,obj.sMeshY] = meshgrid(obj.samplePointSpacing,obj.samplePointSpacing);
+            variaion = (rand()-.5)/
+            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos;
+        end
+
+    end
+end
