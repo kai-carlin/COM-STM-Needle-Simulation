@@ -27,8 +27,7 @@ classdef ProbeClass < handle
         tipEndXPos = 0;
         tipEndYPos = 0;
         tipEndZPos = 0;
-        tipPointingVec;
-
+        tipPointingVec
         %define state stuff here
     end
     methods
@@ -46,7 +45,7 @@ classdef ProbeClass < handle
         % fucntion = update state
 
         function RadiusOfCurvature = calculateRadiusOfBending(obj, voltage)
-            RadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((5.656854249492381)*(-2.65*10^-10)*voltage);
+            RadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((4*1.41421356237)*(-2.65*10^-10)*)
         end
 
         function updateTipLocation(obj)

@@ -1,10 +1,14 @@
 classdef SampleClass < handle
     properties
-        sampleWidth;
+        samplePreviewWidth;
         samplePointSpacingPreview;
         samplePointSpacing;
         sampleAtomicDistance
-        sampleZPos;
+        sampleZPos = 0;
+        sampleStageZPos;
+        sampleWidth;
+        sampleLength;
+        sampleRange;
         sMeshPreviewX;
         sMeshPreviewY;
         sMeshPreviewZ;
@@ -13,25 +17,56 @@ classdef SampleClass < handle
         sMeshZ;
         activeWidth;
         scanRange;
+        scanRangeMax;
+        randVariation;
+        probeXLocations;
+        probeYLocations;
+        pixelResolution;
+        d_33 = 600*10^-12;
+        activeVoltageZ = 0;
     end
     methods
-        function obj = SampleClass(sampleWidth, scanRange, sampleZPos, sampleAtomicDistance)
-            obj.sampleWidth = sampleWidth;
-            obj.samplePointSpacingPreview = linspace(-sampleWidth,sampleWidth,5);
-            obj.sampleZPos = sampleZPos;
+        function obj = SampleClass(samplePreviewWidth, scanRange, scanRangeMax, sampleStageZPos, sampleAtomicDistance, pixelResolution, sampleWidth, sampleLength, sampleRange)
+            obj.samplePreviewWidth = samplePreviewWidth;
+            obj.samplePointSpacingPreview = linspace(-samplePreviewWidth,samplePreviewWidth,5);
+            obj.sampleStageZPos = sampleStageZPos;
             obj.sampleAtomicDistance = sampleAtomicDistance;
             obj.scanRange = scanRange;
+            obj.sampleWidth = sampleWidth;
+            obj.sampleLength = sampleLength;
+            obj.sampleRange = sampleRange;
+            obj.scanRangeMax = scanRangeMax;
+            obj.pixelResolution = pixelResolution;
 
             [obj.sMeshPreviewX,obj.sMeshPreviewY] = meshgrid(obj.samplePointSpacingPreview,obj.samplePointSpacingPreview);
             obj.sMeshPreviewZ = ones(size(obj.sMeshPreviewX))*obj.sampleZPos;
 
-            immediateZoom = 10;
+            immediateZoom = 4;
             obj.activeWidth = obj.sampleAtomicDistance*immediateZoom;
             obj.samplePointSpacing = (-obj.activeWidth:obj.sampleAtomicDistance:obj.activeWidth);
             % % sMesh = meshgrid(samplePointSpacing,samplePointSpacing); FIIIIIIIIIX THIIIIIIIISS
             [obj.sMeshX,obj.sMeshY] = meshgrid(obj.samplePointSpacing,obj.samplePointSpacing);
-            variaion = (rand()-.5)/
-            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos;
+            obj.randVariation = (rand(length(obj.sMeshX))-.5)*(1*10^-11);
+            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos + obj.randVariation;
+
+            obj.generateProbeLocations();
+        end
+
+        function generateProbeLocations(obj)
+            obj.probeXLocations = linspace(-obj.scanRange,obj.scanRange,obj.pixelResolution);
+            obj.probeYLocations = linspace(-obj.scanRange,obj.scanRange,obj.pixelResolution);
+
+        end
+
+        function applyVoltage(obj, voltage)
+            obj.activeVoltageZ = voltage;
+            
+            obj.piezoDisplace()
+        end
+
+        function pizeoDisplace(obj)
+            deltaLength = obj.activeVoltageZ * obj.d_33;
+            obj.sampleZPos = obj.sampleStageZPos + deltaLength
         end
 
     end

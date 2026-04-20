@@ -2,6 +2,9 @@ classdef ScreenClass < handle
     properties
         fig;
         grid;
+        gridLeft;
+        gridMiddle;
+        gridRight;
         probeRef;
         sampleRef;
         scanRef;
@@ -35,18 +38,42 @@ classdef ScreenClass < handle
 
         macroWindowSize;
         microWindowSize;
+
+        samplePreviewHeightScale = 20;
+        
     end
     methods
         function obj = ScreenClass(probeRef, sampleRef, scanRef, macroWindowSize, microWindowSize)
+
+            
 
             obj.probeRef = probeRef;
             obj.sampleRef = sampleRef;
             obj.scanRef = scanRef;
             % set up figure window and grid layout
             obj.fig = figure('Name', 'Probe View', 'NumberTitle','off');
+            linkdata(obj.fig, 'on');
             obj.grid = uigridlayout(obj.fig);
-            obj.grid.RowHeight = {'1x','1x'};
-            obj.grid.ColumnWidth = {'1x','1x','1x','1x'};
+            obj.grid.RowHeight = {'1x'};
+            obj.grid.ColumnWidth = {'1x','1x','2x'};
+
+            obj.gridLeft = uigridlayout(obj.grid);
+            obj.gridLeft.RowHeight = {'.2x','1.5x','2x'};
+            obj.gridLeft.ColumnWidth = {'1x'};
+            obj.gridMiddle = uigridlayout(obj.grid);
+            obj.gridMiddle.RowHeight = {'2x','1x'};
+            obj.gridMiddle.ColumnWidth = {'1x'};
+            obj.gridRight = uigridlayout(obj.grid);
+            obj.gridRight.RowHeight = {'1x','1x'};
+            obj.gridRight.ColumnWidth = {'1x','1x'};
+
+            titlePanel = uipanel(obj.gridLeft, "Title", "Scanning Simulation Program");
+            titleGrid = uigridlayout(titlePanel, [3, 1], 'padding', [1,1,1,1]);
+            titleGrid.RowHeight = {'1x'};
+            titleGrid.ColumnWidth = {'1x'};
+
+            titleText = uilabel(titleGrid, "Text", 'College of Marin Physics Club - Kai Carlin', 'FontSize', 12);
+
             obj.macroWindowSize = macroWindowSize;
             obj.microWindowSize = microWindowSize;
 
@@ -54,12 +81,11 @@ classdef ScreenClass < handle
 
             obj.createMenu1();
             obj.createAxis(1);
-            obj.createAxis(2);
             obj.createAxis(3);
+            obj.createAxis(2);
             obj.createMenu2();
             obj.createAxis(4);
             obj.createAxis(5);
-            obj.createAxis(6);
 
             obj.probeRef.speak();
 
@@ -91,8 +117,8 @@ classdef ScreenClass < handle
 
         function createMenu1(obj)
             % create menu sub grid
-            menuGrid = uigridlayout(obj.grid, 'Padding',4);
-            menuGrid.RowHeight = {'1x','2x','1x'};
+            menuGrid = uigridlayout(obj.gridLeft, 'Padding',4);
+            menuGrid.RowHeight = {'1x','2x'};
             menuGrid.ColumnWidth = {'1x'};
 
             % -------------------------------------------------------------
@@ -172,6 +198,7 @@ classdef ScreenClass < handle
             middleGrid.RowHeight = {'1x','1x','1x'};
             middleGrid.ColumnWidth = {'1x'};
             raise = uibutton(middleGrid, 'Text', '+z', 'FontSize', 12);
+            raise.ButtonPushedFcn = @obj.raiseButtonCallback;
             surface = uibutton(middleGrid, 'Text', 'Touch', 'FontSize', 12);
             lower = uibutton(middleGrid, 'Text', '-z', 'FontSize', 12);
 
@@ -208,31 +235,6 @@ classdef ScreenClass < handle
 
 
             % -------------------------------------------------------------
-            % create settings menu
-            settingsPanel = uipanel(menuGrid, "Title", "Settings");
-            settingsGrid = uigridlayout(settingsPanel, [3, 1], 'padding', [1,1,1,1]);
-            settingsGrid.RowHeight = {'1x','1x','1x'};
-            settingsGrid.ColumnWidth = {'1x'};
-            topGrid = uigridlayout(settingsGrid, [1, 3], 'padding', [1,1,1,1]);
-            topGrid.RowHeight = {'1x'};
-            topGrid.ColumnWidth = {'1.25x','1x','1x'};
-
-            tipSurfaceDistanceLabel = uilabel(topGrid, "Text", 'Tip Surface Distance:', 'FontSize', 12, 'HorizontalAlignment', "right");
-            settingsSqueezer = uigridlayout(topGrid, [1,2], 'padding', 0);
-            settingsSqueezer.ColumnWidth = {'1x','1x'};
-            obj.tipSurfaceDistance = uieditfield(settingsSqueezer, "numeric", "Limits",[-5 10], "Value", 0);
-            scanSpeedUnitsLabel = uilabel(settingsSqueezer, "Text", 'nm', 'FontSize', 12);
-            sampleText = uilabel(topGrid, "Text", 'sample text', 'FontSize', 12);
-
-            middleGrid = uigridlayout(settingsGrid, [1, 4], 'padding', [1,1,1,1]);
-            middleGrid.RowHeight = {'1x'};
-            middleGrid.ColumnWidth = {'1x','1x','1x','1x'};
-
-            biasVoltageLabel = uilabel(middleGrid, "Text", 'Bias Voltage', 'FontSize', 12, 'HorizontalAlignment', "right");
-            settingsSqueezer = uigridlayout(middleGrid, [1,2], 'padding', 0);
-            settingsSqueezer.ColumnWidth = {'1.5x','1x'};
-            obj.biasVoltage = uieditfield(settingsSqueezer, "numeric", "Limits",[0 2000], "Value", 1000);
-            scanSpeedUnitsLabel = uilabel(settingsSqueezer, "Text", 'mV', 'FontSize', 12);
 
 
 
@@ -244,8 +246,8 @@ classdef ScreenClass < handle
             %}
         end
         function createMenu2(obj)
-            menuGrid = uigridlayout(obj.grid, 'Padding',4);
-            menuGrid.RowHeight = {'2x','1x'};
+            menuGrid = uigridlayout(obj.gridLeft, 'Padding',4);
+            menuGrid.RowHeight = {'2.5x', '1x'};
             menuGrid.ColumnWidth = {'1x'};
 
 
@@ -286,67 +288,87 @@ classdef ScreenClass < handle
             obj.dispTable1 = uitable(leftGrid, "Data", obj.varTable1, "RowName", {}, "ColumnName", {"Variable", "Value"});
             obj.dispTable2 = uitable(leftGrid, "Data", obj.varTable2, "RowName", {}, "ColumnName", {"Variable", "Value"});
 
+            % consolePanel = uipanel(menuGrid, "Title", "Console");
+            % consoleGrid = uigridlayout(consolePanel, [1, 1], 'padding', [1,1,1,1]);
+
+            % obj.consoleTextBox = uilistbox(consoleGrid);
+            % obj.consoleTextBox.ValueChangingFcn = @(src,event)obj.consoleEditCallback(src,event);
             consolePanel = uipanel(menuGrid, "Title", "Console");
             consoleGrid = uigridlayout(consolePanel, [1, 1], 'padding', [1,1,1,1]);
-
             obj.consoleTextBox = uilistbox(consoleGrid);
-            % obj.consoleTextBox.ValueChangingFcn = @(src,event)obj.consoleEditCallback(src,event);
-
 
         end
         function createAxis(obj, type)
-            plotWindow = uiaxes(obj.grid);
+
             switch (type)
                 case 1
+
+
+
+
+
+                    plotWindow = uiaxes(obj.gridMiddle);
                     plotTitle = 'Tip Probe 3D Macro View';
                     xAxis = 'x-axis (m)';
                     yAxis = 'y-axis (m)';
                     zAxis = 'z-axis (m)';
-                    probeSurf = surf(obj.probeRef.tX,obj.probeRef.tY,obj.probeRef.tZ, 'EdgeColor', 'none');%'#e6f5f3');
+                    probeSurf = surf(plotWindow, obj.probeRef.tX,obj.probeRef.tY,obj.probeRef.tZ, 'EdgeColor', 'none');%'#e6f5f3');
                     hold(plotWindow, 'on');
-                    sampleSurfPreview = surf(obj.sampleRef.sMeshPreviewX, obj.sampleRef.sMeshPreviewY, obj.sampleRef.sMeshPreviewZ,  'EdgeColor', '#e6f5f3', 'FaceColor', '#1e6eae');
+                    sampleSurfPreview = surf(plotWindow, obj.sampleRef.sMeshPreviewX, obj.sampleRef.sMeshPreviewY, obj.sampleRef.sMeshPreviewZ,  'EdgeColor', '#e6f5f3', 'FaceColor', '#1e6eae');
                     axis(plotWindow, 'equal');
                     xlim(plotWindow, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]);
                     ylim(plotWindow, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]);
-                    zlim(plotWindow, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]+0.015);
+                    zlim(plotWindow, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]*2+0.015);
 
-                    plot3(obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3), 'posX')
-                    plot3(obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3), 'negX')
-                    plot3(obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3), 'posY')
-                    plot3(obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3), 'negY')
+                    plot3(plotWindow, obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(plotWindow, obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3), 'posX')
+                    plot3(plotWindow, obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(plotWindow, obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3), 'negX')
+                    plot3(plotWindow, obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(plotWindow, obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3), 'posY')
+                    plot3(plotWindow, obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(plotWindow, obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3), 'negY')
 
-                    plot3(obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    plot3(obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    plot3([obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
+                    plot3(plotWindow, obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, [obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
 
 
 
                     hold(plotWindow, 'off');
+
+
+
+                    % create settings menu
+                    settingsPanel = uipanel(obj.gridMiddle, "Title", "Settings");
+                    settingsGrid = uigridlayout(settingsPanel, [7, 1], 'padding', [1,1,1,1]);
+                    settingsGrid.RowHeight = {'1x','1x','1x', '1x', '1x', '1x', '1x'};
+                    settingsGrid.ColumnWidth = {'1x'};
+                    topGrid = uigridlayout(settingsGrid, [1, 3], 'padding', [1,1,1,1]);
+                    topGrid.RowHeight = {'1x'};
+                    topGrid.ColumnWidth = {'1.25x','1x','1x'};
+
+                    tipSurfaceDistanceLabel = uilabel(topGrid, "Text", 'Tip Surface Distance:', 'FontSize', 12, 'HorizontalAlignment', "right");
+                    settingsSqueezer = uigridlayout(topGrid, [1,2], 'padding', 0);
+                    settingsSqueezer.ColumnWidth = {'1x','1x'};
+                    obj.tipSurfaceDistance = uieditfield(settingsSqueezer, "numeric", "Limits",[-5 10], "Value", 0);
+                    scanSpeedUnitsLabel = uilabel(settingsSqueezer, "Text", 'nm', 'FontSize', 12);
+                    sampleText = uilabel(topGrid, "Text", 'sample text', 'FontSize', 12);
+
+                    middleGrid = uigridlayout(settingsGrid, [1, 4], 'padding', [1,1,1,1]);
+                    middleGrid.RowHeight = {'1x'};
+                    middleGrid.ColumnWidth = {'1x','1x','1x','1x'};
+
+                    biasVoltageLabel = uilabel(middleGrid, "Text", 'Bias Voltage', 'FontSize', 12, 'HorizontalAlignment', "right");
+                    settingsSqueezer = uigridlayout(middleGrid, [1,2], 'padding', 0);
+                    settingsSqueezer.ColumnWidth = {'1.5x','1x'};
+                    obj.biasVoltage = uieditfield(settingsSqueezer, "numeric", "Limits",[0 2000], "Value", 1000);
+                    scanSpeedUnitsLabel = uilabel(settingsSqueezer, "Text", 'mV', 'FontSize', 12);
+
+
 
                 case 2
-                    plotTitle = 'Tip Probe 3D Micro View';
-                    xAxis = 'x-axis (nm)';
-                    yAxis = 'y-axis (nm)';
-                    zAxis = 'z-axis (nm)';
-
-                    sampleSurf = surf('parent', plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ,  'EdgeColor', '#95acb8');
-                    hold(plotWindow, 'on');
-                    verticePlot = plot3(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 12, 'Color', 'white');
-                    % verticePlot = rectangle(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 10, 'Color', 'white');
-                    
-                    axis(plotWindow, 'equal');
-                    xlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
-                    ylim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
-                    zlimOffset = obj.sampleRef.sampleZPos+((obj.microWindowSize*obj.sampleRef.activeWidth)/1.5);
-                    zlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]+zlimOffset);
-                    colormap(plotWindow, "abyss");
-
-                    hold(plotWindow, 'off');
-                case 3
+                    plotWindow = uiaxes(obj.gridRight);
                     plotTitle = sprintf('Raster Scan: %.0fx%.0f',obj.scanRef.resolution, obj.scanRef.resolution);
                     xAxis = 'x-axis';
                     yAxis = 'y-axis';
@@ -360,9 +382,99 @@ classdef ScreenClass < handle
                     ylim(plotWindow, [0,obj.scanRef.resolution]);
                     colormap(plotWindow, "hot");
 
+                case 3
+                    plotWindow = uiaxes(obj.gridRight);
+                    plotTitle = sprintf('Raster Scan: %.0fx%.0f',obj.scanRef.resolution, obj.scanRef.resolution);
+                    xAxis = 'x-axis';
+                    yAxis = 'y-axis';
+                    zAxis = 'depth';
+
+
+
+                    % imagesc(plotWindow, obj.scanRef.image, 'xData', .5, 'YData', .5);
+                    [imgViewX, imgViewY] = meshgrid(1:length(obj.scanRef.image));
+                    imgViewZ = obj.scanRef.image*obj.samplePreviewHeightScale;
+                    surf(plotWindow, imgViewX, imgViewY, imgViewZ)
+                    axis(plotWindow, 'equal');
+                    xlim(plotWindow, [0,obj.scanRef.resolution]);
+                    ylim(plotWindow, [0,obj.scanRef.resolution]);
+                    colormap(plotWindow, "hot");
+
+
+
+                case 4
+                    plotWindow = uiaxes(obj.gridRight);
+                    plotTitle = 'Tip Probe 3D Micro View';
+                    xAxis = 'x-axis (nm)';
+                    yAxis = 'y-axis (nm)';
+                    zAxis = 'z-axis (nm)';
+
+                    linkdata on;
+
+                    
+
+                    sampleSurf = surf('parent', plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ,  'EdgeColor', '#95acb8');
+                    hold(plotWindow, 'on');
+                    verticePlot = plot3(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 12, 'Color', 'white');
+                    % verticePlot = rectangle(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 10, 'Color', 'white');
+
+
+                    plot3(plotWindow, obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, [obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
+
+
+
+                    axis(plotWindow, 'equal');
+                    xlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
+                    ylim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
+                    zlimOffset = obj.sampleRef.sampleZPos+((obj.microWindowSize*obj.sampleRef.activeWidth)/1.5);
+                    zlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]+zlimOffset);
+                    colormap(plotWindow, "abyss");
+
+
+
+
+
+                    hold(plotWindow, 'off');
+
+                    
+
+                case 5
+                    plotWindow = uiaxes(obj.gridRight);
+                    plotTitle = 'Tip Probe 3D Micro View';
+                    xAxis = 'x-axis (nm)';
+                    yAxis = 'y-axis (nm)';
+                    zAxis = 'z-axis (nm)';
+
+                    sampleSurf = surf('parent', plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ,  'EdgeColor', '#95acb8');
+                    hold(plotWindow, 'on');
+                    verticePlot = plot3(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 12, 'Color', 'white');
+                    % verticePlot = rectangle(plotWindow, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 10, 'Color', 'white');
+
+
+                    plot3(plotWindow, obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(plotWindow, [obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
+                    view(plotWindow, 0,90);
+
+
+                    axis(plotWindow, 'equal');
+                    xlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
+                    ylim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]);
+                    zlimOffset = obj.sampleRef.sampleZPos+((obj.microWindowSize*obj.sampleRef.activeWidth)/1.5);
+                    zlim(plotWindow, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]+zlimOffset);
+                    colormap(plotWindow, "abyss");
+
+
+
+
+
+                    hold(plotWindow, 'off');
 
 
                 otherwise
+                    plotWindow = uiaxes(obj.gridRight);
                     plotTitle = 'Invalid createAxis type argument';
                     xAxis = 'x-axis';
                     yAxis = 'y-axis';
@@ -400,6 +512,11 @@ classdef ScreenClass < handle
             obj.tubeX1Pos.Value = 5;
             % Add more functionality here (e.g., calculations, plotting, etc.)
             % uiwait(msgbox('You clicked the button!', 'Success'));
+        end
+
+        function raiseButtonCallback(obj, src, event)
+            obj.log('Raise by......');
+            obj.sampleRef.deltaVoltage(10);
         end
 
         function speak(obj)
