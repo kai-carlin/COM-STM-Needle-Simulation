@@ -24,6 +24,7 @@ classdef SampleClass < handle
         pixelResolution;
         d_33 = 600*10^-12;
         activeVoltageZ = 0;
+        coarsePosStep = 0.2*10^-3; % 0.9 degree stepper motor
     end
     methods
         function obj = SampleClass(samplePreviewWidth, scanRange, scanRangeMax, sampleStageZPos, sampleAtomicDistance, pixelResolution, sampleWidth, sampleLength, sampleRange)
@@ -65,9 +66,10 @@ classdef SampleClass < handle
         end
 
         function piezoDisplace(obj)
-            deltaLength = obj.activeVoltageZ * obj.d_33 * 100000000;
+            deltaLength = obj.activeVoltageZ * obj.d_33;
             obj.sampleZPos = obj.sampleStageZPos + obj.sampleLength + deltaLength;
-            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos;
+            obj.sMeshZ(1:end) = obj.sampleZPos;
+            obj.sMeshPreviewZ(1:end) = obj.sampleZPos;
             
         end
 
