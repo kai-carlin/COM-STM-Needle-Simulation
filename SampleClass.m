@@ -25,6 +25,7 @@ classdef SampleClass < handle
         d_33 = 600*10^-12;
         activeVoltageZ = 0;
         coarsePosStep = 0.2*10^-3; % 0.9 degree stepper motor
+        %
     end
     methods
         function obj = SampleClass(samplePreviewWidth, scanRange, scanRangeMax, sampleStageZPos, sampleAtomicDistance, pixelResolution, sampleWidth, sampleLength, sampleRange)

@@ -324,9 +324,9 @@ classdef ScreenClass < handle
                     yAxis = 'y-axis (m)';
                     zAxis = 'z-axis (m)';
                     probeSurf = surf(obj.plotWindow{type}, 'EdgeColor', 'none');%'#e6f5f3');
-                    probeSurf.XDataSource = 'obj.probeRef.tX';
-                    probeSurf.YDataSource = 'obj.probeRef.tY';
-                    probeSurf.ZDataSource = 'obj.probeRef.tZ';
+                    probeSurf.XDataSource = 'obj.probeRef.previewtX';
+                    probeSurf.YDataSource = 'obj.probeRef.previewtY';
+                    probeSurf.ZDataSource = 'obj.probeRef.previewtZ';
                     hold(obj.plotWindow{type}, 'on');
                     sampleSurfPreview = surf(obj.plotWindow{type},  'EdgeColor', '#e6f5f3', 'FaceColor', '#1e6eae');
                     sampleSurfPreview.XDataSource = 'obj.sampleRef.sMeshPreviewX';
@@ -337,19 +337,24 @@ classdef ScreenClass < handle
                     ylim(obj.plotWindow{type}, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]);
                     zlim(obj.plotWindow{type}, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]*2+0.015);
 
-                    plot3(obj.plotWindow{type}, obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.tubeEndPosXInt(1),obj.probeRef.tubeEndPosXInt(2),obj.probeRef.tubeEndPosXInt(3), 'posX')
-                    plot3(obj.plotWindow{type}, obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.tubeEndNegXInt(1),obj.probeRef.tubeEndNegXInt(2),obj.probeRef.tubeEndNegXInt(3), 'negX')
-                    plot3(obj.plotWindow{type}, obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.tubeEndPosYInt(1),obj.probeRef.tubeEndPosYInt(2),obj.probeRef.tubeEndPosYInt(3), 'posY')
-                    plot3(obj.plotWindow{type}, obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.tubeEndNegYInt(1),obj.probeRef.tubeEndNegYInt(2),obj.probeRef.tubeEndNegYInt(3), 'negY')
+                    posxMarker = plot3(obj.plotWindow{type},obj.probeRef.pTubeEndPosXInt(1),obj.probeRef.pTubeEndPosXInt(2),obj.probeRef.pTubeEndPosXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    % posxMarker.XDataSource = 'obj.probeRef.pTubeEndPosXInt(1)';
+                    % posxMarker.YDataSource = 'obj.probeRef.pTubeEndPosXInt(2)';
+                    % posxMarker.ZDataSource = 'obj.probeRef.pTubeEndPosXInt(3)';
+                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndPosXInt(1),obj.probeRef.pTubeEndPosXInt(2),obj.probeRef.pTubeEndPosXInt(3), 'posX')
+                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegXInt(1),obj.probeRef.pTubeEndNegXInt(2),obj.probeRef.pTubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndNegXInt(1),obj.probeRef.pTubeEndNegXInt(2),obj.probeRef.pTubeEndNegXInt(3), 'negX')
+                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndPosYInt(1),obj.probeRef.pTubeEndPosYInt(2),obj.probeRef.pTubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndPosYInt(1),obj.probeRef.pTubeEndPosYInt(2),obj.probeRef.pTubeEndPosYInt(3), 'posY')
+                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegYInt(1),obj.probeRef.pTubeEndNegYInt(2),obj.probeRef.pTubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndNegYInt(1),obj.probeRef.pTubeEndNegYInt(2),obj.probeRef.pTubeEndNegYInt(3), 'negY')
+
+                    plot3(obj.plotWindow{type}, obj.probeRef.tX(:,9), obj.probeRef.tY(:,25),obj.probeRef.tZ(:,25), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    plot3(obj.plotWindow{type}, obj.probeRef.tX(end,:), obj.probeRef.tY(end,:),obj.probeRef.tZ(end,:), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
 
                     plot3(obj.plotWindow{type}, obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
                     plot3(obj.plotWindow{type}, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
                     plot3(obj.plotWindow{type}, [obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
-
 
 
                     hold(obj.plotWindow{type}, 'off');

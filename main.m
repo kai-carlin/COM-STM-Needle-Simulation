@@ -10,11 +10,14 @@ close all
 % INITIALIZE SAMPLE
 % assuming HOPG sample material with interatomic distance of 0.14135 nm
 samplePreviewWidth = 0.01; % meters (10mm) used for preview
-sampleStageZPos = -.03;
+
 sampleWidth = 7*10^-3;
 sampleLength = 18*10^-3;
+sampleStageZPos = -.010000001-sampleLength;
 sampleRange = 20*10^-6;
 
+exagerationFactor = 500000;
+% comment
 
 scanRange = 1*(10^(-6));
 scanRangeMax = 51 * (10^(-6));
@@ -26,7 +29,7 @@ pixelResolution = 256;
 scan1 = ScanClass(pixelResolution);
 sample = SampleClass(samplePreviewWidth, scanRange, scanRangeMax, sampleStageZPos, sampleAtomicDistance, pixelResolution, sampleWidth, sampleLength, sampleRange);
 
-probe = ProbeClass(1);
+probe = ProbeClass(1, exagerationFactor);
 screen = ScreenClass(probe, sample, scan1, macroWindowSize, microWindowSize);
 screen.refreshScreen;
 probe.testVal = 2;
