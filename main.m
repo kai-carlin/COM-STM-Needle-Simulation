@@ -12,7 +12,7 @@ close all
 samplePreviewWidth = 0.01; % meters (10mm) used for preview
 
 sampleWidth = 7*10^-3;
-sampleLength = 18*10^-3;
+sampleLength = sampleWidth;%18*10^-3;
 sampleStageZPos = -.010000001-sampleLength;
 sampleRange = 20*10^-6;
 

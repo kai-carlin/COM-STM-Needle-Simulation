@@ -47,9 +47,12 @@ classdef SampleClass < handle
             obj.activeWidth = obj.sampleAtomicDistance*immediateZoom;
             obj.samplePointSpacing = (-obj.activeWidth:obj.sampleAtomicDistance:obj.activeWidth);
             % % sMesh = meshgrid(samplePointSpacing,samplePointSpacing); FIIIIIIIIIX THIIIIIIIISS
-            [obj.sMeshX,obj.sMeshY] = meshgrid(obj.samplePointSpacing,obj.samplePointSpacing);
-            obj.randVariation = (rand(length(obj.sMeshX))-.5)*(1*10^-11);
-            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos;% + obj.randVariation;
+            % [obj.sMeshX,obj.sMeshY] = meshgrid(obj.samplePointSpacing,obj.samplePointSpacing);
+            [obj.sMeshX,obj.sMeshY] = hexGrid(obj.sampleAtomicDistance, sampleWidth);
+            size(obj.sMeshX)
+            obj.randVariation = (rand(size(obj.sMeshX))-.5)*(2*10^-11);
+            size(obj.randVariation)
+            obj.sMeshZ = ones(size(obj.sMeshX))*obj.sampleZPos + obj.randVariation;
 
             obj.generateProbeLocations();
         end

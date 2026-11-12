@@ -31,7 +31,6 @@ classdef ProbeClass < handle
         xRadiusOfCurvature;
         yRadiusOfCurvature;
         exagerationFactor;
-        
 
         %define tip here
         tipLength = 0.010; % meters (10mm)
@@ -42,9 +41,25 @@ classdef ProbeClass < handle
         tipEndYPos = 0;
         tipEndZPos = 0;
         tipPointingVec;
+        PreviewTipPointingVec;
+
+        pTipStartXPos = 0;
+        pTipStartYPos = 0;
+        pTipStartZPos = 0;
+        pTipEndXPos = 0;
+        pTipEndYPos = 0;
+        pTipEndZPos = 0;
+
+        linePointsReferenceX;
+        linePointsReferenceY;
+        linePointsReferenceZ;
+        pLinePointsReferenceX;
+        pLinePointsReferenceY;
+        pLinePointsReferenceZ;
 
         %define state stuff here
     end
+    
     methods
         function obj = ProbeClass(testValInput, exagerationFactor)
             % initialize tube geometry
@@ -60,75 +75,149 @@ classdef ProbeClass < handle
             obj.previewtY = obj.tY;
             obj.previewtZ = obj.tZ;
 
-
             updateTipLocation(obj);
         end
+
         % fucntion = apply voltage
         % fucntion = update state
+
         function updateVerticeLocations(obj)
             % k = 1:length(obj.reftX);
 
-            n = length(obj.reftX(:,25));
-            n2 = length(obj.reftX(1,:));
+            n = size(obj.reftX, 1);
+            n2 = size(obj.reftX, 2);
+
+            % convert each x and y radius of curvature into curvatures
+            % works when voltage = 0
+            kx = 1/obj.xRadiusOfCurvature;
+            ky = 1/obj.yRadiusOfCurvature;
+
+            % combine into one curvature so works at any arbitrary angle
+            % about z
+            kTotal = sqrt(kx^2 + ky^2);
+            phi = atan2(ky, kx); % four quadrant inverse tangent!
+
+            % when x and y voltage are both zero:
+            if kTotal == 0
+                obj.tX = obj.reftX;
+                obj.tY = obj.reftY;
+                obj.tZ = obj.reftZ;
+                obj.previewtX = obj.reftX;
+                obj.previewtY = obj.reftY;
+                obj.previewtZ = obj.reftZ;
+                updateTipLocation(obj);
+                return;
+            end
+
+            % calc redius of curvature based on combined x and y
+            Reff = 1/kTotal;
+            rPrevrPrev = Reff/obj.exagerationFactor;
+
             for p=1:n2
-            % p=1;
-                for k=1:n
-                    r = obj.xRadiusOfCurvature - obj.reftX(end,p);
-                    theta = (obj.tubeLength/(n*obj.xRadiusOfCurvature))*k;
-                    obj.tX(n-k+1,p) = obj.reftX(n-k+1,p) + (r - r*cos(theta));
-                    obj.previewtX(n-k+1,p) = obj.reftX(n-k+1,p) + (r - r*cos(theta))*obj.exagerationFactor;
+                % base cords for column p
+                x0 = obj.reftX(end, p);
+                y0 = obj.reftY(end, p);
 
-                    obj.previewtZ(n-k+1,p) = obj.reftZ(end,p) - (r*sin(theta));
+                % project onto bending plane; u = radial, v = perp
+                u0 =  x0 * cos(phi) + y0 * sin(phi);
+                v0 = -x0 * sin(phi) + y0 * cos(phi);
 
-                    % r = obj.yRadiusOfCurvature - obj.reftY(end,p);
-                    % theta = (obj.tubeLength/(n*obj.yRadiusOfCurvature))*k;
-                    % obj.tY(n-k+1,p) = obj.reftY(n-k+1,p) + (r - r*cos(theta));
-                    % obj.previewtY(n-k+1,p) = obj.reftY(n-k+1,p) + (r - r*cos(theta))*obj.exagerationFactor;
-    
+                for k = 1:n
+                    rowIdx = n - k + 1;
+                    
+                    % fractional distance along the tube (0 at base, 1 at tip)
+                    frac = (k - 1) / (n - 1); 
+
+                    % real bend
+                    r = Reff - u0;
+                    theta = (obj.tubeLength/Reff)*frac;
+
+                    uBent = Reff - r*cos(theta);
+                    zBent = r*sin(theta);
+
+                    % Rotate back to global x, y
+                    obj.tX(rowIdx, p) = uBent*cos(phi) - v0*sin(phi);
+                    obj.tY(rowIdx, p) = uBent*sin(phi) + v0*cos(phi);
+                    obj.tZ(rowIdx, p) = obj.reftZ(end, p) - zBent;
+
+                    % preview bend
+                    rPrev = rPrevrPrev - u0;
+                    thetaPrev = (obj.tubeLength / rPrevrPrev) * frac;
+
+                    uBentPrev = rPrevrPrev - rPrev * cos(thetaPrev);
+                    zBentPrev = rPrev * sin(thetaPrev);
+
+                    % Rotate back to global x, y
+                    obj.previewtX(rowIdx, p) = uBentPrev * cos(phi) - v0 * sin(phi);
+                    obj.previewtY(rowIdx, p) = uBentPrev * sin(phi) + v0 * cos(phi);
+                    obj.previewtZ(rowIdx, p) = obj.reftZ(end, p) - zBentPrev;
                 end
             end
-            % obj.tX(:,9) = obj.reftX(:,9) + 
-            %obj.xRadiusOfCurvature-obj.xRadiusOfCurvature*cos(((obj.tubeLength)/(length(obj.reftX)*obj.xRadiusOfCurvature))*k);
-            obj.tZ(:,25);
-            % obj.tY(:,25)
+
+            % Update Tip as well
+            updateTipLocation(obj);
         end
 
         function calculateRadiusOfBending(obj, xVoltage, yVoltage)
-            obj.xRadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((5.656854249492381)*(-2.65*10^-10)*xVoltage);
-            obj.yRadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((5.656854249492381)*(-2.65*10^-10)*yVoltage);
+            obj.voltageX = xVoltage;
+            obj.voltageY = yVoltage;
+            obj.xRadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((5.656854249492381)*(-2.65*10^-10)*obj.voltageX);
+            obj.yRadiusOfCurvature = (3.141592653589793*(obj.tubeRadius*2)*obj.tubeLength)/((5.656854249492381)*(-2.65*10^-10)*obj.voltageY);
         end
 
         function updateTipLocation(obj)
             % obj.tZ(1,1) = obj.tZ(1,1)-.001;
-            obj.tubeEndPosXInt = [obj.tX(1,1),obj.tY(1,1),obj.tZ(1,1)];
-            obj.tubeEndNegXInt = [obj.tX(1,17),obj.tY(1,17),obj.tZ(1,17)];
-            obj.tubeEndPosYInt = [obj.tX(1,9),obj.tY(1,9),obj.tZ(1,9)];
-            obj.tubeEndNegYInt = [obj.tX(1,9),obj.tY(1,25),obj.tZ(1,25)];
+            % tip end
+            obj.tubeEndPosXInt = [obj.tX(1,1), obj.tY(1,1), obj.tZ(1,1)];
+            obj.tubeEndNegXInt = [obj.tX(1,17), obj.tY(1,17), obj.tZ(1,17)];
+            obj.tubeEndPosYInt = [obj.tX(1,9), obj.tY(1,9),  obj.tZ(1,9)];
+            obj.tubeEndNegYInt = [obj.tX(1,25), obj.tY(1,25), obj.tZ(1,25)];
 
-            obj.pTubeEndPosXInt = [obj.previewtX(1,1),obj.previewtY(1,1),obj.previewtZ(1,1)];
-            obj.pTubeEndNegXInt = [obj.previewtX(1,17),obj.previewtY(1,17),obj.previewtZ(1,17)];
-            obj.pTubeEndPosYInt = [obj.previewtX(1,9),obj.previewtY(1,9),obj.previewtZ(1,9)];
-            obj.pTubeEndNegYInt = [obj.previewtX(1,9),obj.previewtY(1,25),obj.previewtZ(1,25)];
+            % tip preview end
+            obj.pTubeEndPosXInt = [obj.previewtX(1,1),  obj.previewtY(1,1),  obj.previewtZ(1,1)];
+            obj.pTubeEndNegXInt = [obj.previewtX(1,17), obj.previewtY(1,17), obj.previewtZ(1,17)];
+            obj.pTubeEndPosYInt = [obj.previewtX(1,9),  obj.previewtY(1,9),  obj.previewtZ(1,9)];
+            obj.pTubeEndNegYInt = [obj.previewtX(1,25), obj.previewtY(1,25), obj.previewtZ(1,25)];
 
-            obj.tipStartXPos = (obj.tubeEndPosXInt(1)+obj.tubeEndNegXInt(1))/2;
-            obj.tipStartYPos = (obj.tubeEndPosYInt(2)+obj.tubeEndNegYInt(2))/2;
-            obj.tipStartZPos = (obj.tubeEndPosXInt(3)+obj.tubeEndNegXInt(3)+obj.tubeEndPosYInt(3)+obj.tubeEndNegYInt(3))/4;
+            % tip start
+            obj.tipStartXPos = (obj.tubeEndPosXInt(1) + obj.tubeEndNegXInt(1)) / 2;
+            obj.tipStartYPos = (obj.tubeEndPosYInt(2) + obj.tubeEndNegYInt(2)) / 2;
+            obj.tipStartZPos = (obj.tubeEndPosXInt(3) + obj.tubeEndNegXInt(3) + obj.tubeEndPosYInt(3) + obj.tubeEndNegYInt(3)) / 4;
 
-            % These are vectors which point along what would be a line
-            % connecting these points
-            xPointingVec = [obj.tubeEndPosXInt(1) - obj.tubeEndNegXInt(1), 0, obj.tubeEndPosXInt(3) - obj.tubeEndNegXInt(3)];
-            yPointingVec = [0, obj.tubeEndPosYInt(2) - obj.tubeEndNegYInt(2), obj.tubeEndPosYInt(3) - obj.tubeEndNegYInt(3)];
+            % tip preview start
+            obj.pTipStartXPos = (obj.pTubeEndPosXInt(1) + obj.pTubeEndNegXInt(1)) / 2;
+            obj.pTipStartYPos = (obj.pTubeEndPosYInt(2) + obj.pTubeEndNegYInt(2)) / 2;
+            obj.pTipStartZPos = (obj.pTubeEndPosXInt(3) + obj.pTubeEndNegXInt(3) + obj.pTubeEndPosYInt(3) + obj.pTubeEndNegYInt(3)) / 4;
+
+            % 3D-ified
+            xPointingVec = obj.tubeEndPosXInt - obj.tubeEndNegXInt;
+            yPointingVec = obj.tubeEndPosYInt - obj.tubeEndNegYInt;
 
             obj.tipPointingVec = cross(xPointingVec, yPointingVec);
             obj.tipPointingVec = obj.tipPointingVec / norm(obj.tipPointingVec);
             
-            obj.tipEndXPos = obj.tipStartXPos - obj.tipPointingVec(1)*obj.tipLength;
-            obj.tipEndYPos = obj.tipStartYPos - obj.tipPointingVec(2)*obj.tipLength;
-            obj.tipEndZPos = obj.tipStartZPos - obj.tipPointingVec(3)*obj.tipLength;
-        
-        end
-        function speak(obj) 
-            disp("ProbeSpeak" + obj.testVal);
+            obj.tipEndXPos = obj.tipStartXPos - obj.tipPointingVec(1) * obj.tipLength;
+            obj.tipEndYPos = obj.tipStartYPos - obj.tipPointingVec(2) * obj.tipLength;
+            obj.tipEndZPos = obj.tipStartZPos - obj.tipPointingVec(3) * obj.tipLength;
+
+            obj.linePointsReferenceX = [obj.pTipStartXPos, obj.pTipEndXPos];
+            obj.linePointsReferenceY = [obj.pTipStartYPos, obj.pTipEndYPos];
+            obj.linePointsReferenceZ = [obj.pTipStartZPos, obj.pTipEndZPos];
+
+            % preview
+            pxPointingVec = obj.pTubeEndPosXInt - obj.pTubeEndNegXInt;
+            pyPointingVec = obj.pTubeEndPosYInt - obj.pTubeEndNegYInt;
+
+            obj.PreviewTipPointingVec = cross(pxPointingVec, pyPointingVec);
+            obj.PreviewTipPointingVec = obj.PreviewTipPointingVec / norm(obj.PreviewTipPointingVec);
+
+            obj.pTipEndXPos = obj.pTipStartXPos - obj.PreviewTipPointingVec(1) * obj.tipLength;
+            obj.pTipEndYPos = obj.pTipStartYPos - obj.PreviewTipPointingVec(2) * obj.tipLength;
+            obj.pTipEndZPos = obj.pTipStartZPos - obj.PreviewTipPointingVec(3) * obj.tipLength;
+            
+            obj.pLinePointsReferenceX = [obj.pTipStartXPos, obj.pTipEndXPos];
+            obj.pLinePointsReferenceY = [obj.pTipStartYPos, obj.pTipEndYPos];
+            obj.pLinePointsReferenceZ = [obj.pTipStartZPos, obj.pTipEndZPos];
         end
     end
 end

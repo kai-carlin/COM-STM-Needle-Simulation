@@ -40,6 +40,11 @@ classdef ScreenClass < handle
         dispTable1;
         dispTable2;
 
+        coarseRaise;
+        coarseTouch;
+        coarseLower;
+        coarseMove;
+
         consoleLog = strings(255, 1)
         consoleIndex = 1;
         consoleTextBox;
@@ -50,12 +55,12 @@ classdef ScreenClass < handle
         samplePreviewHeightScale = 20;
 
         plotWindow;
-        
+
     end
     methods
         function obj = ScreenClass(probeRef, sampleRef, scanRef, macroWindowSize, microWindowSize)
 
-            
+
 
             obj.probeRef = probeRef;
             obj.sampleRef = sampleRef;
@@ -97,10 +102,10 @@ classdef ScreenClass < handle
             obj.createAxis(4);
             obj.createAxis(5);
 
-            obj.probeRef.speak();
+           % obj.probeRef.speak();
 
             obj.refreshScreen();
-            
+
             %{
             
             
@@ -178,6 +183,7 @@ classdef ScreenClass < handle
             scanSpeedUnitsLabel = uilabel(scanPanelSqueezer, "Text", 'μm/s', 'FontSize', 12);
 
             maximizeButton = uibutton(scanPanelGrid, 'Text', 'Maximize', 'FontSize', 12);
+            maximizeButton.ButtonPushedFcn = @obj.maximizeButtonCallback;
             scanButton = uibutton(scanPanelGrid, 'Text', 'Scan Image', 'FontSize', 12);
             scanButton.ButtonPushedFcn = @obj.scanButtonCallback;
 
@@ -194,15 +200,23 @@ classdef ScreenClass < handle
             leftGrid.RowHeight = {'1x','1x','1x'};
             leftGrid.ColumnWidth = {'1x','1x','1x'};
             upLeft = uibutton(leftGrid, 'Text', '-x +y', 'FontSize', 12);
-            % upLeft.ButtonPushedFcn = @obj....;
+            upLeft.ButtonPushedFcn = @obj.upLeftButtonCallback;
             up = uibutton(leftGrid, 'Text', '+y', 'FontSize', 12);
+            up.ButtonPushedFcn = @obj.upButtonCallback;
             upRight = uibutton(leftGrid, 'Text', '+x +y', 'FontSize', 12);
+            upRight.ButtonPushedFcn = @obj.upRightButtonCallback;
             left = uibutton(leftGrid, 'Text', '-x', 'FontSize', 12);
+            left.ButtonPushedFcn = @obj.leftButtonCallback;
             center = uibutton(leftGrid, 'Text', 'Center', 'FontSize', 12);
+            center.ButtonPushedFcn = @obj.centerButtonCallback;
             right = uibutton(leftGrid, 'Text', '+x', 'FontSize', 12);
+            right.ButtonPushedFcn = @obj.rightButtonCallback;
             downLeft = uibutton(leftGrid, 'Text', '-x -y', 'FontSize', 12);
+            downLeft.ButtonPushedFcn = @obj.downLeftButtonCallback;
             down = uibutton(leftGrid, 'Text', '-y', 'FontSize', 12);
+            down.ButtonPushedFcn = @obj.downButtonCallback;
             downRight = uibutton(leftGrid, 'Text', '+x -y', 'FontSize', 12);
+            downRight.ButtonPushedFcn = @obj.downRightButtonCallback;
 
             % middle height control
             middleGrid = uigridlayout(sectionsGrid, [3, 1], 'padding', [1,1,1,1]);
@@ -210,8 +224,10 @@ classdef ScreenClass < handle
             middleGrid.ColumnWidth = {'1x'};
             raise = uibutton(middleGrid, 'Text', '+z', 'FontSize', 12);
             raise.ButtonPushedFcn = @obj.raiseButtonCallback;
-            surface = uibutton(middleGrid, 'Text', 'Touch', 'FontSize', 12);
+            touch = uibutton(middleGrid, 'Text', 'Touch', 'FontSize', 12);
+            touch.ButtonPushedFcn = @obj.touchButtonCallback;
             lower = uibutton(middleGrid, 'Text', '-z', 'FontSize', 12);
+            lower.ButtonPushedFcn = @obj.lowerButtonCallback;
 
             % right side exact positioning
 
@@ -223,11 +239,12 @@ classdef ScreenClass < handle
             % PASTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             moveSqueezer = uigridlayout(rightGrid, [1,3], 'padding', 0);
-            moveSqueezer.ColumnWidth = {'1x', '1x'};
+            moveSqueezer.ColumnWidth = {'1x', '1x', '.5x'};
             stepLabel = uilabel(moveSqueezer, "Text", '  step:', 'FontSize', 12, 'HorizontalAlignment', "right");
-            obj.step = uieditfield(moveSqueezer, "numeric", "Limits",[-5 10], "Value", 0);
+            obj.step = uieditfield(moveSqueezer, "numeric", "Limits",[0.01 1], "Value", 1);
+            stepUnitsLabel = uilabel(moveSqueezer, "Text", 'μm', 'FontSize', 12);
 
-            
+
             moveSqueezer = uigridlayout(rightGrid, [1,2], 'padding', 0);
             moveSqueezer.ColumnWidth = {'.25x','1x'};
             moveXLabel = uilabel(moveSqueezer, "Text", '  x:', 'FontSize', 12, 'HorizontalAlignment', "right");
@@ -243,6 +260,7 @@ classdef ScreenClass < handle
             % DISABLE Z EDIT FIELD IF BOX IS TICKED!!!!!!!!!!!!!!!!!!!!!!!!
             autoZCheck = uicheckbox(rightGrid, "Text", "Auto Z Height");
             moveButton = uibutton(rightGrid, 'Text', 'Move to xyz', 'FontSize', 12);
+            moveButton.ButtonPushedFcn = @obj.moveButtonCallback;
 
 
             % -------------------------------------------------------------
@@ -266,10 +284,10 @@ classdef ScreenClass < handle
             leftGrid = uigridlayout(statusPanel, [1, 2], 'padding', [1,1,1,1]);
             % leftGrid.RowHeight = {'1x','1x','1x','1x','1x','1x'};
             % leftGrid.ColumnWidth = {'1x','1x'};
-            obj.varTable1 = ["Tip x Position:", obj.probeRef.tipEndXPos + " m";
-                "Tip y Position:",obj.probeRef.tipEndYPos + " m";
-                "Tip z Position:",obj.probeRef.tipEndZPos + " m";
-                "Sample Height:",4;
+            obj.varTable1 = ["Tip x Position:", obj.probeRef.tipEndXPos + " μm";
+                "Tip y Position:",obj.probeRef.tipEndYPos + " μm";
+                "Tip z Position:",obj.probeRef.tipEndZPos + " μm";
+                "Sample z Position:",obj.sampleRef.sampleZPos + " μm";
                 "+x Voltage:",5;
                 "-x Voltage:",6;
                 "+y Voltage:",6;
@@ -338,24 +356,53 @@ classdef ScreenClass < handle
                     zlim(obj.plotWindow{type}, [-obj.macroWindowSize*obj.probeRef.tubeRadius,obj.macroWindowSize*obj.probeRef.tubeRadius]*2+0.015);
 
                     posxMarker = plot3(obj.plotWindow{type},obj.probeRef.pTubeEndPosXInt(1),obj.probeRef.pTubeEndPosXInt(2),obj.probeRef.pTubeEndPosXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
-                    % posxMarker.XDataSource = 'obj.probeRef.pTubeEndPosXInt(1)';
-                    % posxMarker.YDataSource = 'obj.probeRef.pTubeEndPosXInt(2)';
-                    % posxMarker.ZDataSource = 'obj.probeRef.pTubeEndPosXInt(3)';
-                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndPosXInt(1),obj.probeRef.pTubeEndPosXInt(2),obj.probeRef.pTubeEndPosXInt(3), 'posX')
-                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegXInt(1),obj.probeRef.pTubeEndNegXInt(2),obj.probeRef.pTubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndNegXInt(1),obj.probeRef.pTubeEndNegXInt(2),obj.probeRef.pTubeEndNegXInt(3), 'negX')
-                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndPosYInt(1),obj.probeRef.pTubeEndPosYInt(2),obj.probeRef.pTubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndPosYInt(1),obj.probeRef.pTubeEndPosYInt(2),obj.probeRef.pTubeEndPosYInt(3), 'posY')
-                    plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegYInt(1),obj.probeRef.pTubeEndNegYInt(2),obj.probeRef.pTubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    text(obj.plotWindow{type}, obj.probeRef.pTubeEndNegYInt(1),obj.probeRef.pTubeEndNegYInt(2),obj.probeRef.pTubeEndNegYInt(3), 'negY')
+                    posxMarker.XDataSource = 'obj.probeRef.pTubeEndPosXInt(1)';
+                    posxMarker.YDataSource = 'obj.probeRef.pTubeEndPosXInt(2)';
+                    posxMarker.ZDataSource = 'obj.probeRef.pTubeEndPosXInt(3)';
+                    posxMarker.DataTipTemplate.DataTipRows = dataTipTextRow('', {'posX'});
+                    % datatip(posxMarker, 'DataIndex', 1, "FontSize", 6);
 
-                    plot3(obj.plotWindow{type}, obj.probeRef.tX(:,9), obj.probeRef.tY(:,25),obj.probeRef.tZ(:,25), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    plot3(obj.plotWindow{type}, obj.probeRef.tX(end,:), obj.probeRef.tY(end,:),obj.probeRef.tZ(end,:), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
 
-                    plot3(obj.plotWindow{type}, obj.probeRef.tipStartXPos,obj.probeRef.tipStartYPos,obj.probeRef.tipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    plot3(obj.plotWindow{type}, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
-                    plot3(obj.plotWindow{type}, [obj.probeRef.tipStartXPos, obj.probeRef.tipEndXPos], [obj.probeRef.tipStartYPos, obj.probeRef.tipEndYPos], [obj.probeRef.tipStartZPos,obj.probeRef.tipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
+                    negxMarker = plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegXInt(1),obj.probeRef.pTubeEndNegXInt(2),obj.probeRef.pTubeEndNegXInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    negxMarker.XDataSource = 'obj.probeRef.pTubeEndNegXInt(1)';
+                    negxMarker.YDataSource = 'obj.probeRef.pTubeEndNegXInt(2)';
+                    negxMarker.ZDataSource = 'obj.probeRef.pTubeEndNegXInt(3)';
+                    negxMarker.DataTipTemplate.DataTipRows = dataTipTextRow('', {'negX'});
+                    % datatip(negxMarker, 'DataIndex', 1, "FontSize", 6);
 
+                    posyMarker = plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndPosYInt(1),obj.probeRef.pTubeEndPosYInt(2),obj.probeRef.pTubeEndPosYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    posyMarker.XDataSource = 'obj.probeRef.pTubeEndPosYInt(1)';
+                    posyMarker.YDataSource = 'obj.probeRef.pTubeEndPosYInt(2)';
+                    posyMarker.ZDataSource = 'obj.probeRef.pTubeEndPosYInt(3)';
+                    posyMarker.DataTipTemplate.DataTipRows = dataTipTextRow('', {'posY'});
+                    % datatip(posyMarker, 'DataIndex', 1, "FontSize", 6);
+
+                    negyMarker = plot3(obj.plotWindow{type}, obj.probeRef.pTubeEndNegYInt(1),obj.probeRef.pTubeEndNegYInt(2),obj.probeRef.pTubeEndNegYInt(3),'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    negyMarker.XDataSource = 'obj.probeRef.pTubeEndNegYInt(1)';
+                    negyMarker.YDataSource = 'obj.probeRef.pTubeEndNegYInt(2)';
+                    negyMarker.ZDataSource = 'obj.probeRef.pTubeEndNegYInt(3)';
+                    negyMarker.DataTipTemplate.DataTipRows = dataTipTextRow('', {'negY'});
+                    % datatip(negyMarker, 'DataIndex', 1, "FontSize", 6);
+
+                    % plot3(obj.plotWindow{type}, obj.probeRef.tX(:,9), obj.probeRef.tY(:,25),obj.probeRef.tZ(:,25), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+                    % plot3(obj.plotWindow{type}, obj.probeRef.tX(end,:), obj.probeRef.tY(end,:),obj.probeRef.tZ(end,:), 'bo','MarkerSize', 6,'MarkerFaceColor','#FFFFFF')
+
+
+                    tipPreviewTop = plot3(obj.plotWindow{type}, obj.probeRef.pTipStartXPos,obj.probeRef.pTipStartYPos,obj.probeRef.pTipStartZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    tipPreviewTop.XDataSource = 'obj.probeRef.pTipStartXPos';
+                    tipPreviewTop.YDataSource = 'obj.probeRef.pTipStartYPos';
+                    tipPreviewTop.ZDataSource = 'obj.probeRef.pTipStartZPos';
+
+                    tipPreviewBottom = plot3(obj.plotWindow{type}, obj.probeRef.tipEndXPos,obj.probeRef.tipEndYPos,obj.probeRef.tipEndZPos,'ro','MarkerSize', 6,'MarkerFaceColor','#FFFFFF');
+                    tipPreviewBottom.XDataSource = 'obj.probeRef.pTipEndXPos';
+                    tipPreviewBottom.YDataSource = 'obj.probeRef.pTipEndYPos';
+                    tipPreviewBottom.ZDataSource = 'obj.probeRef.pTipEndZPos';
+
+                    tipPreviewLine = plot3(obj.plotWindow{type}, [obj.probeRef.pTipStartXPos, obj.probeRef.pTipEndXPos], [obj.probeRef.pTipStartYPos, obj.probeRef.pTipEndYPos], [obj.probeRef.pTipStartZPos,obj.probeRef.pTipEndZPos], '-', 'LineWidth', 3, 'Color','#e84fb2');
+
+                    tipPreviewLine.XDataSource = 'obj.probeRef.pLinePointsReferenceX';
+                    tipPreviewLine.YDataSource = 'obj.probeRef.pLinePointsReferenceY';
+                    tipPreviewLine.ZDataSource = 'obj.probeRef.pLinePointsReferenceZ';
 
                     hold(obj.plotWindow{type}, 'off');
 
@@ -379,6 +426,7 @@ classdef ScreenClass < handle
                     % settingsSqueezer = uigridlayout(topGrid, [1,2], 'padding', 0);
                     % settingsSqueezer.ColumnWidth = {'1x','1x'};
                     obj.refreshBut = uibutton(topGrid, 'Text', 'Refresh Screen', 'FontSize', 12);
+                    obj.refreshBut.ButtonPushedFcn = @obj.refreshButButtonCallback;
 
 
 
@@ -402,12 +450,16 @@ classdef ScreenClass < handle
                     middleGrid.RowHeight = {'1x'};
                     middleGrid.ColumnWidth = {'1x','1x','1x','1x'};
 
-                    coarseRaise = uibutton(middleGrid, 'Text', '+z', 'FontSize', 12);
-                    coarseTouch = uibutton(middleGrid, 'Text', 'Touch', 'FontSize', 12);
-                    coarseLower = uibutton(middleGrid, 'Text', '-z', 'FontSize', 12);
-                    coarseMove = uibutton(middleGrid, 'Text', 'Move', 'FontSize', 12);
+                    obj.coarseRaise = uibutton(middleGrid, 'Text', '+z', 'FontSize', 12);
+                    obj.coarseRaise.ButtonPushedFcn = @obj.coarseRaiseButtonCallback;
+                    obj.coarseTouch = uibutton(middleGrid, 'Text', 'Touch', 'FontSize', 12);
+                    obj.coarseTouch.ButtonPushedFcn = @obj.coarseTouchButtonCallback;
+                    obj.coarseLower = uibutton(middleGrid, 'Text', '-z', 'FontSize', 12);
+                    obj.coarseLower.ButtonPushedFcn = @obj.coarseLowerButtonCallback;
+                    obj.coarseMove = uibutton(middleGrid, 'Text', 'Move', 'FontSize', 12);
+                    obj.coarseMove.ButtonPushedFcn = @obj.coarseMoveButtonCallback;
                     % raise.ButtonPushedFcn = @obj.raiseButtonCallback;
-                    
+
                     middleGrid = uigridlayout(settingsGrid, [1, 3], 'padding', [1,1,1,1]);
                     middleGrid.RowHeight = {'1x'};
                     middleGrid.ColumnWidth = {'1x','1x'};
@@ -425,9 +477,9 @@ classdef ScreenClass < handle
                     % stepInfoButton = uibutton(settingsSqueezer, 'Text', '?', 'FontSize', 12);
                     % OPEN SMALL INFO WINDOW DESCRIBING WHAT STEP SIZE ACTUALLY
                     % EQUATES TO PHYSICALLY
-                
-                  
-                   
+
+
+
 
                     %%
 
@@ -440,13 +492,13 @@ classdef ScreenClass < handle
                     settingsSqueezer.ColumnWidth = {'1.5x','1x'};
                     obj.biasVoltage = uieditfield(settingsSqueezer, "numeric", "Limits",[0 2000], "Value", 1000);
                     scanSpeedUnitsLabel = uilabel(settingsSqueezer, "Text", 'mV', 'FontSize', 12);
-    
+
                     voltageNoiseLabel = uilabel(middleGrid, "Text", 'Volt. Noise', 'FontSize', 12, 'HorizontalAlignment', "right");
                     settingsSqueezer = uigridlayout(middleGrid, [1,2], 'padding', 0);
                     settingsSqueezer.ColumnWidth = {'1.5x','1x'};
                     obj.voltageNoise = uieditfield(settingsSqueezer, "numeric", "Limits",[0 2000], "Value", 1000);
                     voltageNoiseUnitsLabel = uilabel(settingsSqueezer, "Text", 'μV', 'FontSize', 12);
-    
+
 
                     %%
 
@@ -456,12 +508,12 @@ classdef ScreenClass < handle
 
                     pixelResolutionLabel = uilabel(middleGrid, "Text", 'Pixel Resolution', 'FontSize', 12, 'HorizontalAlignment', "right");
                     obj.pixelResolution = uieditfield(middleGrid, "numeric", "Limits",[0 2000], "Value", 1000);
-    
+
                     pixelRangeLabel = uilabel(middleGrid, "Text", 'Pixel Range', 'FontSize', 12, 'HorizontalAlignment', "right");
                     obj.pixelRange = uieditfield(middleGrid, "numeric", "Limits",[0 2000], "Value", 1000);
 
 
-                    
+
                 case 2
                     obj.plotWindow{type} = uiaxes(obj.gridRight);
                     plotTitle = sprintf('Raster Scan: %.0fx%.0f',obj.scanRef.resolution, obj.scanRef.resolution);
@@ -504,14 +556,17 @@ classdef ScreenClass < handle
                     yAxis = 'y-axis (nm)';
                     zAxis = 'z-axis (nm)';
 
-                    
 
-                    
 
-                    sampleSurf = surf('parent', obj.plotWindow{type}, 'EdgeColor', '#95acb8');
+
+
+                    sampleSurf = surf('parent', obj.plotWindow{type}, 'EdgeColor', 'none');%'EdgeColor', '#95acb8');
                     sampleSurf.XDataSource = 'obj.sampleRef.sMeshX';
                     sampleSurf.YDataSource = 'obj.sampleRef.sMeshY';
                     sampleSurf.ZDataSource = 'obj.sampleRef.sMeshZ';
+                    sampleSurf.FaceColor = 'interp';
+                    colormap(obj.plotWindow{type}, jet);
+
                     hold(obj.plotWindow{type}, 'on');
                     verticePlot = plot3(obj.plotWindow{type}, obj.sampleRef.sMeshX(:), obj.sampleRef.sMeshY(:), obj.sampleRef.sMeshZ(:), '.', 'MarkerSize', 12, 'Color', 'white');
                     verticePlot.XDataSource = 'obj.sampleRef.sMeshX(:)';
@@ -532,7 +587,7 @@ classdef ScreenClass < handle
                     zlimOffset = obj.sampleRef.sampleZPos+((obj.microWindowSize*obj.sampleRef.activeWidth)/1.5);
                     zlim(obj.plotWindow{type}, [-obj.microWindowSize*obj.sampleRef.activeWidth,obj.microWindowSize*obj.sampleRef.activeWidth]+zlimOffset+obj.sampleRef.sampleZPos), 'auto';
                     colormap(obj.plotWindow{type}, "abyss");
-                   
+
 
 
 
@@ -540,7 +595,7 @@ classdef ScreenClass < handle
 
                     hold(obj.plotWindow{type}, 'off');
 
-                    
+
 
                 case 5
                     obj.plotWindow{type} = uiaxes(obj.gridRight);
@@ -549,7 +604,9 @@ classdef ScreenClass < handle
                     yAxis = 'y-axis (nm)';
                     zAxis = 'z-axis (nm)';
 
-                    sampleSurf = surf('parent', obj.plotWindow{type}, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ,  'EdgeColor', '#95acb8');
+                    sampleSurf = surf('parent', obj.plotWindow{type}, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ,  'EdgeColor', 'none');
+                    sampleSurf.FaceColor = 'interp';
+                    colormap(obj.plotWindow{type}, jet);
                     hold(obj.plotWindow{type}, 'on');
                     verticePlot = plot3(obj.plotWindow{type}, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 12, 'Color', 'white');
                     % verticePlot = rectangle(obj.plotWindow{type}, obj.sampleRef.sMeshX, obj.sampleRef.sMeshY, obj.sampleRef.sMeshZ, '.', 'MarkerSize', 10, 'Color', 'white');
@@ -594,7 +651,7 @@ classdef ScreenClass < handle
         function refreshScreen(obj)
             for plotIterator = 1:length(obj.plotWindow)
                 refreshdata(obj.plotWindow(plotIterator), 'caller');
-                drawnow()
+                drawnow();
             end
         end
 
@@ -602,8 +659,10 @@ classdef ScreenClass < handle
             timeStamp = datetime('now');
             timeStamp.Format = 'HH:mm:ss:ms';
             obj.consoleLog(obj.consoleIndex) = string(timeStamp) + ' - ' + consoleMessage;
+            disp(string(timeStamp) + ' - ' + consoleMessage);
             obj.consoleIndex = obj.consoleIndex + 1;
             obj.consoleTextBox.Items = obj.consoleLog;
+
             % obj.consoleTextBox.Value = 'hi';
             % disp("logging");
             scroll(obj.consoleTextBox, obj.consoleLog(obj.consoleIndex));
@@ -615,16 +674,66 @@ classdef ScreenClass < handle
 
 
 
+        % ----------- Scan Image uipanel -------------
+
+        function maximizeButtonCallback(obj, src, event)
+            obj.log('Maximzing Scan Area');
+        end
 
         function scanButtonCallback(obj, src, event)
-            disp('scanButton clicked!');
-            obj.tubeX1Pos.Value = 5;
+            % disp('scanButton clicked!');
+            obj.log('Starting Scan');
+            % obj.tubeX1Pos.Value = 5;
             % Add more functionality here (e.g., calculations, plotting, etc.)
             % uiwait(msgbox('You clicked the button!', 'Success'));
         end
 
+        % --------------------------------------------
+
+        % ----------- Move Probe Tip uipanel -------------
+
+        function upLeftButtonCallback(obj, src, event)
+            obj.log('Moving in -x +y direction');
+        end
+
+        function upButtonCallback(obj, src, event)
+            obj.log('Moving in +y direction');
+        end
+
+        function upRightButtonCallback(obj, src, event)
+            obj.log('Moving in +x +y direction');
+        end
+
+        function leftButtonCallback(obj, src, event)
+            obj.log('Moving in -x direction');
+        end
+
+        function centerButtonCallback(obj, src, event)
+            obj.log('Centering Probe');
+        end
+
+        function rightButtonCallback(obj, src, event)
+            obj.log('Moving in +x direction');
+        end
+
+        function downLeftButtonCallback(obj, src, event)
+            obj.log('Moving in -x -y direction');
+        end
+
+        function downButtonCallback(obj, src, event)
+            obj.log('Moving in -y direction');
+        end
+
+        function downRightButtonCallback(obj, src, event)
+            obj.log('Moving in +x -y direction');
+        end
+
+        function moveButtonCallback(obj, src, event)
+            obj.log(sprintf('Moving to x:%.4f y:%.4f z:%.4f', obj.moveXPos.Value, obj.moveYPos.Value, obj.moveZPos.Value));
+        end
+
         function raiseButtonCallback(obj, src, event)
-            obj.log('Raise by......');
+            obj.log(sprintf('Raise by: %.4f', obj.step.Value));
             obj.sampleRef.deltaVoltage(1);
             % axis(obj.plotWindow{4}, 'tight');
             zlimOffset = obj.sampleRef.sampleZPos+((obj.microWindowSize*obj.sampleRef.activeWidth)/1.5);
@@ -632,9 +741,65 @@ classdef ScreenClass < handle
             obj.refreshScreen();
         end
 
+        function touchButtonCallback(obj, src, event)
+            obj.log('Touching');
+        end
+
+        function lowerButtonCallback(obj, src, event)
+            obj.log('Lower by...');
+        end
+
+        % --------------------------------------------
+
+        % ----------- Settings uipanel -------------
+
         function speak(obj)
             disp("ScreenSpeak % calling ProbeSpeak...")
-            obj.probeRef.speak();
+            % obj.probeRef.speak();
+        end
+
+        function refreshButButtonCallback(obj, src, event)
+            obj.log("Refreshing");
+            obj.refreshScreen();
+
+            refreshVariableTables(obj);
+        end
+
+        function coarseRaiseButtonCallback(obj, src, event)
+            obj.log('Coarse raise by...');
+        end
+
+        function coarseTouchButtonCallback(obj, src, event)
+            obj.log('Coarse touching');
+        end
+
+        function coarseLowerButtonCallback(obj, src, event)
+            obj.log('Coarse lower by...');
+        end
+
+        function coarseMoveButtonCallback(obj, src, event)
+            obj.log('Coarse moving to...');
+        end
+
+        % --------------------------------------------
+
+        function refreshVariableTables(obj)
+            obj.dispTable1.Data = ["Tip x Position:", sprintf("%.4f μm", obj.probeRef.tipEndXPos);
+                "Tip y Position:",sprintf("%.4f μm", obj.probeRef.tipEndYPos)
+                "Tip z Position:",sprintf("%.4f μm", obj.probeRef.tipEndZPos)
+                "Sample z Position:",sprintf("%.4f μm", obj.sampleRef.sampleZPos);
+                "+x Voltage:",5;
+                "-x Voltage:",6;
+                "+y Voltage:",6;
+                "-y Voltage:",6;
+                "+z Voltage:",6;
+                "-z Voltage:",6;
+                "Voltage Max:",6;
+                "Voltage Min:",6;
+                "Tip x Base Pos:", obj.probeRef.tipStartXPos + " m";
+                "Tip y Base Pos:",obj.probeRef.tipStartYPos + " m";
+                "Tip z Base Pos:",obj.probeRef.tipStartZPos + " m";];
+
         end
     end
 end
